@@ -2,25 +2,29 @@
 FROM rhel7.2/java:jre8
 MAINTAINER Tommy Hughes <tohughes@redhat.com>
 
-# Http port
-EXPOSE 9000
-
-RUN groupadd -r sonarsrc -g 1000 && useradd -u 1000 -r -g sonarsrc -m -d /opt/sonarsrc -s /sbin/nologin -c "sonarsrc user" sonarsrc && \
-    chmod 755 /opt/sonarsrc && yum -y update && yum -y install unzip && yum clean all
-
-# Specify the user which should be used to execute all commands below
-USER sonarsrc
-
 ENV SONAR_VERSION=6.0 \
-    SONARQUBE_HOME=/opt/sonarsrc/sonarqube \
+    SONAR_USER=sonarsrc
+
+ENV SONARQUBE_HOME=/opt/$SONAR_USER/sonarqube \
     # Database configuration
     # Defaults to using H2
     SONARQUBE_JDBC_USERNAME=sonar \
     SONARQUBE_JDBC_PASSWORD=sonar \
     SONARQUBE_JDBC_URL=
 
-# Set the working directory to sonarsrc' user home directory
-WORKDIR /opt/sonarsrc
+# Http port
+EXPOSE 9000
+
+RUN set -x \
+    && groupadd -r $SONAR_USER -g 1000 && useradd -u 1000 -r -g $SONAR_USER -m -s /sbin/nologin -c "$SONAR_USER user" $SONAR_USER \
+    && mkdir -p /opt/$SONAR_USER && chmod 755 /opt/$SONAR_USER && chown $SONAR_USER:$SONAR_USER /opt/$SONAR_USER \
+    && yum -y update && yum -y install unzip && yum clean all
+
+# Specify the user which should be used to execute all commands below
+USER $SONAR_USER
+
+# Set the working directory to sonar user home directory
+WORKDIR /opt/$SONAR_USER
 
 RUN set -x \
     # pub   2048R/D26468DE 2015-05-25
@@ -38,6 +42,13 @@ RUN set -x \
 
 VOLUME ["$SONARQUBE_HOME/data", "$SONARQUBE_HOME/extensions"]
 
-WORKDIR $SONARQUBE_HOME
 COPY run.sh $SONARQUBE_HOME/bin/
+
+# ????? unecessary with sonar's build scripts???'
+USER root
+RUN chmod u+x $SONARQUBE_HOME/bin/run.sh && chown $SONAR_USER:$SONAR_USER $SONARQUBE_HOME/bin/run.sh
+USER $SONAR_USER
+# ???
+
+WORKDIR $SONARQUBE_HOME
 ENTRYPOINT ["./bin/run.sh"]
