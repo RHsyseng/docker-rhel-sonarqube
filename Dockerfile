@@ -42,13 +42,6 @@ RUN set -x \
 
 VOLUME ["$SONARQUBE_HOME/data", "$SONARQUBE_HOME/extensions"]
 
-COPY run.sh $SONARQUBE_HOME/bin/
-
-# ????? unecessary with sonar's build scripts???'
-USER root
-RUN chmod u+x $SONARQUBE_HOME/bin/run.sh && chown $SONAR_USER:$SONAR_USER $SONARQUBE_HOME/bin/run.sh
-USER $SONAR_USER
-# ???
-
 WORKDIR $SONARQUBE_HOME
+COPY run.sh $SONARQUBE_HOME/bin/
 ENTRYPOINT ["./bin/run.sh"]
