@@ -1,0 +1,37 @@
+version: "2"
+
+services:
+  sonarqube:
+    image: sonarqube:6.0-rhel7
+    container_name: sonarqube
+    depends_on:
+      - db
+    ports:
+      - "9000:9000"
+    networks:
+      - sonarnet
+    environment:
+      SONARQUBE_JDBC_URL: jdbc:postgresql://db:5432/sonar
+
+#    volumes:
+#      - $SONARQUBE_HOME/conf:$SONARQUBE_HOME/conf
+#      - $SONARQUBE_HOME/data:$SONARQUBE_HOME/data
+#      - $SONARQUBE_HOME/extensions:$SONARQUBE_HOME/extensions
+#      - $SONARQUBE_HOME/lib/bundled-plugins:$SONARQUBE_HOME/lib/bundled-plugins
+
+  db:
+    image: postgres
+    container_name: db
+    networks:
+      - sonarnet
+    environment:
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+    volumes:
+      - /var/lib/postgresql:/var/lib/postgresql
+      # This needs explicit mapping due to https://github.com/docker-library/postgres/blob/4e48e3228a30763913ece952c611e5e9b95c8759/Dockerfile.template#L52
+      - /var/lib/postgresql/data:/var/lib/postgresql/data
+
+networks:
+  sonarnet:
+    driver: bridge
