@@ -23,6 +23,10 @@ RUN set -x \
     && groupadd -r $SONAR_USER -g 1000 && useradd -u 1000 -r -g $SONAR_USER -m -s /sbin/nologin -c "$SONAR_USER user" $SONAR_USER \
     && mkdir -p /opt/$SONAR_USER && chmod 755 /opt/$SONAR_USER \
     && chown $SONAR_USER:$SONAR_USER /opt/$SONAR_USER \
+    && yum clean all \
+    && yum-config-manager -q --disable \* \
+    && yum-config-manager --enable rhel-7-server-rpms \
+    && yum -y install deltarpm \
     && yum -y update \
     && yum -y install unzip java-1.8.0-openjdk \
     && yum clean all
