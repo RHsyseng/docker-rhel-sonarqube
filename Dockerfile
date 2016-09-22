@@ -84,7 +84,7 @@ LABEL name="sonarqube" \
 ## OpenShift labels
 LABEL io.k8s.description="SonarQube" \
       io.k8s.display-name="SonarQube" \
-      io.openshift.build.commit.author="Tommy Hughes <tohughes@redhat.com>" \
+      io.openshift.build.commit.author="Red Hat Systems Engineering <refarch-feedback@redhat.com>" \
       io.openshift.expose-services="9000:9000" \
       io.openshift.tags="SonarQube,sonarqube,sonar"
 
