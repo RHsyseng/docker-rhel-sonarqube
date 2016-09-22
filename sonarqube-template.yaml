@@ -1,0 +1,293 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: sonarqube
+objects:
+- apiVersion: "v1"
+  kind: "BuildConfig"
+  metadata:
+    name: "sonarqube" 
+  spec:
+    source:
+      type: "Dockerfile"
+      dockerfile: "FROM registry.access.redhat.com/rhel7\nMAINTAINER Tommy Hughes <tohughes@redhat.com>\n\nENV SONAR_VERSION=6.0 \\\n    SONAR_USER=sonarsrc \\\n    LANG=en_US.utf8 \\\n    JAVA_HOME=/usr/lib/jvm/jre\n\nENV SONARQUBE_HOME=/opt/$SONAR_USER/sonarqube \\\n    # Database configuration\n    # Defaults to using H2\n    SONARQUBE_JDBC_USERNAME=sonar \\\n    SONARQUBE_JDBC_PASSWORD=sonar \\\n    SONARQUBE_JDBC_URL=\n\nEXPOSE 9000\n\nRUN set -x \\\n    && groupadd -r $SONAR_USER -g 1000 && useradd -u 1000 -r -g $SONAR_USER -m -s /sbin/nologin -c \"$SONAR_USER user\" $SONAR_USER \\\n    && mkdir -p /opt/$SONAR_USER && chmod 755 /opt/$SONAR_USER \\\n    && chown $SONAR_USER:$SONAR_USER /opt/$SONAR_USER \\\n    && yum clean all \\\n    && yum-config-manager -q --disable \\* \\\n    && yum-config-manager --enable rhel-7-server-rpms \\\n    && yum -y install deltarpm \\\n    && yum -y update \\\n    && yum -y install unzip java-1.8.0-openjdk \\\n    && yum clean all\n\nUSER $SONAR_USER\n\nWORKDIR /opt/$SONAR_USER\n\nRUN set -x \\\n    # pub   2048R/D26468DE 2015-05-25\n    #       Key fingerprint = F118 2E81 C792 9289 21DB  CAB4 CFCA 4A29 D264 68DE\n    # uid                  sonarsource_deployer (Sonarsource Deployer) <infra@sonarsource.com>\n    # sub   2048R/06855C1D 2015-05-25\n    && gpg --keyserver ha.pool.sks-keyservers.net --recv-keys F1182E81C792928921DBCAB4CFCA4A29D26468DE \\\n    && curl -o sonarqube.zip -SL https://sonarsource.bintray.com/Distribution/sonarqube/sonarqube-$SONAR_VERSION.zip --retry 999 --retry-max-time 0 -C - \\\n    && curl -o sonarqube.zip.asc -SL https://sonarsource.bintray.com/Distribution/sonarqube/sonarqube-$SONAR_VERSION.zip.asc --retry 999 --retry-max-time 0 -C - \\\n    && gpg --batch --verify sonarqube.zip.asc sonarqube.zip \\\n    && unzip sonarqube.zip \\\n    && mv sonarqube-$SONAR_VERSION sonarqube \\\n    && rm sonarqube.zip* \\\n    && rm -rf $SONARQUBE_HOME/bin/*\n\nRUN echo $'#!/bin/bash\\n\\\nset -e; \\\nif [ \"${1:0:1}\" != '-' ]; then \\\n  exec \"$@\"; \\\nfi; \\\nexec java -jar lib/sonar-application-$SONAR_VERSION.jar \\\n-Dsonar.log.console=true \\\n-Dsonar.jdbc.username=\"$SONARQUBE_JDBC_USERNAME\" \\\n-Dsonar.jdbc.password=\"$SONARQUBE_JDBC_PASSWORD\" \\\n-Dsonar.jdbc.url=\"$SONARQUBE_JDBC_URL\" \\\n-Dsonar.web.javaAdditionalOpts=\"$SONARQUBE_WEB_JVM_OPTS -Djava.security.egd=file:/dev/./urandom\" \\\n\"$@\"' > $SONARQUBE_HOME/bin/run.sh \\\n    && chmod u+x $SONARQUBE_HOME/bin/run.sh\n\nLABEL name=\"sonarqube\" \\\n      vendor=\"SonarSource\" \\\n      version=\"6.0-rhel7\" \\\n      summary=\"SonarQube\" \\\n      description=\"SonarQube\" \\\n      RUN='docker run -di \\\n            --name ${NAME}_run \\\n            -p 9000:9000 \\\n            -p 9092:9092 \\\n            $IMAGE' \\\n      STOP='docker stop ${NAME}_run && echo \"Container ${NAME}_run has been stopped\"' \\\n      UNINSTALL='docker rm ${NAME}_run && echo \"Uninstallation complete\"'\n\nLABEL io.k8s.description=\"SonarQube\" \\\n      io.k8s.display-name=\"SonarQube\" \\\n      io.openshift.build.commit.author=\"Tommy Hughes <tohughes@redhat.com>\" \\\n      io.openshift.expose-services=\"9000:9000\" \\\n      io.openshift.tags=\"SonarQube,sonarqube,sonar\"\n\nVOLUME [\"$SONARQUBE_HOME/data\", \"$SONARQUBE_HOME/extensions\"]\nWORKDIR $SONARQUBE_HOME\nENTRYPOINT [\"./bin/run.sh\"]\n"
+    strategy:
+      type: "Docker"
+    output:
+      to:
+        kind: "DockerImage"
+        name: "172.30.xx.xxx:5000/openshift/sonarqube:6.0-rhel7"
+      pushSecret:
+        name: "ocp-registry"
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    labels:
+      app: sonarqube
+    name: sonarqube
+  spec:
+    tags:
+    - name: "6.0-rhel7"
+      from:
+        kind: DockerImage
+        name: 172.30.xx.xxx:5000/openshift/sonarqube
+- kind: PersistentVolumeClaim
+  apiVersion: v1
+  metadata:
+    name: "${DATABASE_SERVICE_NAME}"
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: "${DATABASE_VOLUME_CAPACITY}"
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      app: sonarqube
+    name: postgresql
+  spec:
+    replicas: 1
+    selector:
+      name: postgresql
+    strategy:
+      recreateParams:
+        timeoutSeconds: 900
+      resources: {}
+      type: Recreate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          name: postgresql
+      spec:
+        containers:
+        - env:
+          - name: POSTGRESQL_USER
+            value: "${POSTGRESQL_USER}"
+          - name: POSTGRESQL_PASSWORD
+            value: "${POSTGRESQL_PASSWORD}"
+          - name: POSTGRESQL_DATABASE
+            value: "${POSTGRESQL_DATABASE}"
+          image: registry.access.redhat.com/rhscl/postgresql-95-rhel7@sha256:a0bfc4aa195737c802988f7c636073644d7a821061d801004277c98d776c9cbf
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 5432
+            timeoutSeconds: 1
+          name: postgresql
+          ports:
+          - containerPort: 5432
+            protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -i
+              - -c
+              - psql -h 127.0.0.1 -U $POSTGRESQL_USER -q -d $POSTGRESQL_DATABASE -c 'SELECT 1'
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              memory: "${DATABASE_MEMORY_LIMIT}"
+          securityContext:
+            capabilities: {}
+            privileged: false
+          terminationMessagePath: /dev/termination-log
+          volumeMounts:
+          - mountPath: /var/lib/pgsql/data
+            name: postgresql-data
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - name: postgresql-data
+          persistentVolumeClaim:
+            claimName: "${DATABASE_SERVICE_NAME}"
+    test: false
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - postgresql
+        from:
+          kind: ImageStreamTag
+          name: postgresql:9.5
+          namespace: openshift
+      type: ImageChange
+    - type: ConfigChange
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      app: sonarqube
+    name: sonarqube
+  spec:
+    replicas: 1
+    selector:
+      app: sonarqube
+      deploymentconfig: sonarqube
+    strategy:
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        annotations:
+          openshift.io/container.sonarqube.image.entrypoint: '["./bin/run.sh"]'
+        creationTimestamp: null
+        labels:
+          app: sonarqube
+          deploymentconfig: sonarqube
+      spec:
+        containers:
+        - env:
+          - name: SONARQUBE_JDBC_PASSWORD
+            value: "${POSTGRESQL_PASSWORD}"
+          - name: SONARQUBE_JDBC_URL
+            value: "jdbc:postgresql://${DATABASE_SERVICE_NAME}/${POSTGRESQL_DATABASE}"
+          - name: SONARQUBE_JDBC_USERNAME
+            value: "${POSTGRESQL_USER}"
+          image: sonarqube:6.0-rhel7
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /api/system/status
+              port: 9000
+              scheme: HTTP
+            initialDelaySeconds: 900
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 4
+          name: sonarqube
+          ports:
+          - containerPort: 9000
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /api/system/status
+              port: 9000
+              scheme: HTTP
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 4
+          resources:
+            requests:
+              cpu: 750m
+              memory: 1024Mi
+          terminationMessagePath: /dev/termination-log
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        resources:
+          limits:
+            memory: "${SONAR_MEMORY_LIMIT}"
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+    test: false
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - sonarqube
+        from:
+          kind: ImageStreamTag
+          name: sonarqube:6.0-rhel7
+          namespace: openshift
+      type: ImageChange
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: "${DATABASE_SERVICE_NAME}"
+    labels:
+      app: sonarqube
+  spec:
+    ports:
+    - name: postgresql
+      protocol: TCP
+      port: 5432
+      targetPort: 5432
+      nodePort: 0
+    selector:
+      name: postgresql
+    type: ClusterIP
+    sessionAffinity: None
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      service.alpha.openshift.io/dependencies: '[{"name":"postgresql","namespace":"","kind":"Service"}]'
+    name: sonarqube
+    labels:
+      app: sonarqube
+  spec:
+    ports:
+    - name: 9000-tcp
+      port: 9000
+      protocol: TCP
+      targetPort: 9000
+    selector:
+      app: sonarqube
+      deploymentconfig: sonarqube
+    sessionAffinity: None
+    type: ClusterIP
+parameters:
+- name: DATABASE_SERVICE_NAME
+  displayName: Database Service Name
+  description: The name of the OpenShift Service exposed for the database.
+  value: postgresql
+  required: true
+- name: DATABASE_MEMORY_LIMIT
+  displayName: Database Memory Limit
+  description: Maximum amount of memory the database can use.
+  value: 512Mi
+- name: SONAR_MEMORY_LIMIT
+  displayName: Sonarqube Memory Limit
+  description: Maximum amount of memory the sonarqube can use.
+  value: 2Gi
+- name: DATABASE_VOLUME_CAPACITY
+  displayName: Volume Capacity
+  description: Volume space available for data, e.g. 512Mi, 2Gi.
+  value: 1Gi
+  required: true
+- name: POSTGRESQL_USER
+  displayName: PostgreSQL Connection Username
+  description: Username for PostgreSQL user that will be used for accessing the database.
+  generate: expression
+  from: user[A-Z0-9]{3}
+  value: sonar
+  required: true
+- name: POSTGRESQL_PASSWORD
+  displayName: PostgreSQL Connection Password
+  description: Password for the PostgreSQL connection user.
+  generate: expression
+  from: "[a-zA-Z0-9]{16}"
+  required: true
+- name: POSTGRESQL_DATABASE
+  displayName: PostgreSQL Database Name
+  description: Name of the PostgreSQL database accessed.
+  value: sonar
+  required: true
+- name: POSTGRESQL_VERSION
+  displayName: Version of PostgreSQL Image
+  description: Version of PostgreSQL image to be used (9.2, 9.4, 9.5 or latest).
+  value: '9.5'
+  required: true

@@ -1,13 +1,12 @@
 # docker build --rm -t sonarqube:6.0-rhel7 .
-FROM registry.access.redhat.com/rhel7
-MAINTAINER Tommy Hughes <tohughes@redhat.com>
+FROM jboss/base-jdk:8
+
+MAINTAINER Red Hat Systems Engineering <refarch-feedback@redhat.com>
 
 # Default to UTF-8 file.encoding
-# Set the JAVA_HOME variable to make it clear where Java is located
 ENV SONAR_VERSION=6.0 \
     SONAR_USER=sonarsrc \
-    LANG=en_US.utf8 \
-    JAVA_HOME=/usr/lib/jvm/jre
+    LANG=en_US.utf8
 
 ENV SONARQUBE_HOME=/opt/$SONAR_USER/sonarqube \
     # Database configuration
@@ -23,12 +22,10 @@ RUN set -x \
     && groupadd -r $SONAR_USER -g 1000 && useradd -u 1000 -r -g $SONAR_USER -m -s /sbin/nologin -c "$SONAR_USER user" $SONAR_USER \
     && mkdir -p /opt/$SONAR_USER && chmod 755 /opt/$SONAR_USER \
     && chown $SONAR_USER:$SONAR_USER /opt/$SONAR_USER \
-    && yum clean all \
     && yum-config-manager -q --disable \* \
     && yum-config-manager --enable rhel-7-server-rpms \
-    && yum -y install deltarpm \
-    && yum -y update \
-    && yum -y install unzip java-1.8.0-openjdk \
+    && yum -y install --setopt=tsflags=nodocs deltarpm \
+    && yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical --setopt=tsflags=nodocs \
     && yum clean all
 
 # Specify the user which should be used to execute all commands below
