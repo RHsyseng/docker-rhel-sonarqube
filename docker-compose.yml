@@ -20,7 +20,7 @@ services:
 #      - $SONARQUBE_HOME/lib/bundled-plugins:$SONARQUBE_HOME/lib/bundled-plugins
 
   db:
-    image: registry.access.redhat.com/rhscl/postgresql-94-rhel7
+    image: registry.access.redhat.com/rhscl/postgresql-95-rhel7
     container_name: db
     networks:
       - sonarnet
