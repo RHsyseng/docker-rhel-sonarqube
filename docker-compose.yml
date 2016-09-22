@@ -20,17 +20,18 @@ services:
 #      - $SONARQUBE_HOME/lib/bundled-plugins:$SONARQUBE_HOME/lib/bundled-plugins
 
   db:
-    image: postgres
+    image: registry.access.redhat.com/rhscl/postgresql-94-rhel7
     container_name: db
     networks:
       - sonarnet
     environment:
-      POSTGRES_USER: sonar
-      POSTGRES_PASSWORD: sonar
+      - POSTGRESQL_USER=sonar
+      - POSTGRESQL_PASSWORD=sonar
+      - POSTGRESQL_DATABASE=sonar
     volumes:
-      - /var/lib/postgresql:/var/lib/postgresql
+      - /var/lib/pgsql:/var/lib/pgsql
       # This needs explicit mapping due to https://github.com/docker-library/postgres/blob/4e48e3228a30763913ece952c611e5e9b95c8759/Dockerfile.template#L52
-      - /var/lib/postgresql/data:/var/lib/postgresql/data
+      - /var/lib/pgsql/data:/var/lib/pgsql/data
 
 networks:
   sonarnet:
