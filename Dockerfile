@@ -51,19 +51,8 @@ RUN set -x \
     && rm sonarqube.zip* \
     && rm -rf $SONARQUBE_HOME/bin/*
 
-RUN echo $'#!/bin/bash\n\
-set -e; \
-if [ "${1:0:1}" != '-' ]; then \
-  exec "$@"; \
-fi; \
-exec java -jar lib/sonar-application-$SONAR_VERSION.jar \
--Dsonar.log.console=true \
--Dsonar.jdbc.username="$SONARQUBE_JDBC_USERNAME" \
--Dsonar.jdbc.password="$SONARQUBE_JDBC_PASSWORD" \
--Dsonar.jdbc.url="$SONARQUBE_JDBC_URL" \
--Dsonar.web.javaAdditionalOpts="$SONARQUBE_WEB_JVM_OPTS -Djava.security.egd=file:/dev/./urandom" \
-"$@"' > $SONARQUBE_HOME/bin/run.sh \
-    && chmod u+x $SONARQUBE_HOME/bin/run.sh
+COPY run.sh $SONARQUBE_HOME/bin/
+RUN chmod u+x $SONARQUBE_HOME/bin/run.sh
 
 ## Atomic Labels
 # The UNINSTALL label by DEFAULT will attempt to delete a container (rm) and image (rmi) if the container NAME is the same as the actual IMAGE
