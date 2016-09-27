@@ -32,7 +32,7 @@ RUN set -x \
     && yum clean all
 
 # Specify the user which should be used to execute all commands below
-USER $SONAR_USER
+USER 1000
 
 # Set the working directory to sonar user home directory
 WORKDIR /opt/$SONAR_USER
