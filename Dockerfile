@@ -76,7 +76,6 @@ LABEL name="sonarqube" \
       RUN='docker run -di \
             --name ${NAME}_run \
             -p 9000:9000 \
-            -p 9092:9092 \
             $IMAGE' \
       STOP='docker stop ${NAME}_run && echo "Container ${NAME}_run has been stopped"' \
       UNINSTALL='docker rm ${NAME}_run && echo "Uninstallation complete"'
