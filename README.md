@@ -1,4 +1,4 @@
-If using the template to run in OpenShift, be sure your security context constraint (scc) has at least the following set... or some other setting that allows for UIDs 1000 & 26 at runtime:
+If using the template to run in OpenShift, be sure your security context constraint (scc) has at least the following set... or some other setting that allows for UIDs 1000 & 26 at runtime.  If deployed to "openshift" project/namespace, the template with handle this for you with a new "serviceaccount" & "securitycontext":
 ```yaml
   Run As User Strategy: MustRunAsNonRoot
 ```
