@@ -10,11 +10,19 @@ $ oc status -n default
 # get token
 $ oc whoami -t
 $ docker login -u <user> -p <token> 172.30.xx.xxx:5000
-$ oc secrets new ocp-registry ~/.docker/config.json
-$ oc secrets add serviceaccount/builder secrets/ocp-registry
+$ oc project openshift
+$ oc delete secret ocp-registry ; oc secrets new ocp-registry ~/.docker/config.json ; oc secrets add serviceaccount/builder secrets/ocp-registry
 ```
 Also,
 If using a persistent volume with postgres, ownership of that volume should be is set accordingly... for example:
 ```shell
 $ chown -R 26:26 /var/export/postgres_pv
+```
+Deploy from template:
+```shell
+$ oc project openshift
+$ oc process -f sonarqube-template.yaml | oc create -f -
+
+# IF deployment NOT triggered automatically
+$ oc deploy postgresql ; oc start-build sonarqube
 ```
