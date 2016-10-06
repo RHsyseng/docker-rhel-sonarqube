@@ -3,6 +3,38 @@ kind: Template
 metadata:
   name: sonarqube
 objects:
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    creationTimestamp: null
+    name: sonarqube
+- apiVersion: v1
+  kind: SecurityContextConstraints
+  fsGroup:
+    type: RunAsAny
+  groups:
+  metadata:
+    annotations:
+      kubernetes.io/description: sonarqube-nonroot provides all features of the restricted SCC
+        but allows users to run with any non-root UID.  The user must specify the UID
+        or it must be specified on the by the manifest of the container runtime.
+    creationTimestamp: null
+    name: sonarqube-nonroot
+  priority: 1
+  users:
+  - system:serviceaccount:openshift:sonarqube
+  runAsUser:
+    type: MustRunAsNonRoot
+  seLinuxContext:
+    type: MustRunAs
+  supplementalGroups:
+    type: RunAsAny
+  volumes:
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - persistentVolumeClaim
+  - secret
 - apiVersion: "v1"
   kind: "BuildConfig"
   metadata:
@@ -110,6 +142,8 @@ objects:
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         securityContext: {}
+        serviceAccount: sonarqube
+        serviceAccountName: sonarqube
         terminationGracePeriodSeconds: 30
         volumes:
         - name: postgresql-data
@@ -201,6 +235,8 @@ objects:
           limits:
             memory: "${SONAR_MEMORY_LIMIT}"
         securityContext: {}
+        serviceAccount: sonarqube
+        serviceAccountName: sonarqube
         terminationGracePeriodSeconds: 30
     test: false
     triggers:
