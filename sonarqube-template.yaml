@@ -49,7 +49,7 @@ objects:
     output:
       to:
         kind: "DockerImage"
-        name: "172.30.xx.xxx:5000/openshift/sonarqube:6.0-rhel7"
+        name: "${OCP_REGISTRY_URL}:${SONARQUBE_BUILD_TAG}"
       pushSecret:
         name: "ocp-registry"
 - apiVersion: v1
@@ -60,10 +60,10 @@ objects:
     name: sonarqube
   spec:
     tags:
-    - name: "6.0-rhel7"
+    - name: "${SONARQUBE_BUILD_TAG}"
       from:
         kind: DockerImage
-        name: 172.30.xx.xxx:5000/openshift/sonarqube
+        name: "${OCP_REGISTRY_URL}"
 - kind: PersistentVolumeClaim
   apiVersion: v1
   metadata:
@@ -198,7 +198,7 @@ objects:
             value: "jdbc:postgresql://${DATABASE_SERVICE_NAME}/${POSTGRESQL_DATABASE}"
           - name: SONARQUBE_JDBC_USERNAME
             value: "${POSTGRESQL_USER}"
-          image: sonarqube:6.0-rhel7
+          image: "sonarqube:${SONARQUBE_BUILD_TAG}"
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -247,7 +247,7 @@ objects:
         - sonarqube
         from:
           kind: ImageStreamTag
-          name: sonarqube:6.0-rhel7
+          name: "sonarqube:${SONARQUBE_BUILD_TAG}"
           namespace: openshift
       type: ImageChange
 - kind: Service
@@ -327,4 +327,14 @@ parameters:
   displayName: Version of PostgreSQL Image
   description: Version of PostgreSQL image to be used (9.2, 9.4, 9.5 or latest).
   value: '9.5'
+  required: true
+- name: OCP_REGISTRY_URL
+  displayName: OCP Registry URL
+  description: OCP Registry URL, e.g. 172.30.93.229:5000/openshift/sonarqube
+  value: 172.30.xx.xxx:5000/openshift/sonarqube
+  required: true
+- name: SONARQUBE_BUILD_TAG
+  displayName: SonarQube Image Tag
+  description: SonarQube Image Tag (6.0-rhel7, latest, etc.)
+  value: 6.0-rhel7
   required: true
