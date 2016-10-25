@@ -1,7 +1,7 @@
 #####OpenShift notes
 If using a persistent volume with postgres, ownership of that volume should be is set accordingly & necessary lines uncommented from template... for example:
 ```shell
-$ chown -R 1000100000:26 /var/export/postgres_pv
+$ chown -R 1000100002:26 /var/export/postgres_pv
 ```
 Deploy from template:
 ```shell

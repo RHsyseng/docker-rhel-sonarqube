@@ -42,7 +42,7 @@ RUN yum clean all && \
     yum clean all
 
 ENV APP_ROOT=/opt/${SONAR_USER} \
-    USER_UID=1000100000
+    USER_UID=1000100001
 ENV SONARQUBE_HOME=${APP_ROOT}/sonarqube
 ENV PATH=$PATH:${SONARQUBE_HOME}/bin
 RUN mkdir -p ${APP_ROOT} && \

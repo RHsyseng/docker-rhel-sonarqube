@@ -110,7 +110,7 @@ objects:
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         securityContext:
-          runAsUser: 1000100000
+          runAsUser: 1000100002
         terminationGracePeriodSeconds: 30
 #        volumes:
 #        - name: postgresql-data
@@ -202,7 +202,7 @@ objects:
           limits:
             memory: "${SONAR_MEMORY_LIMIT}"
         securityContext:
-          runAsUser: 1000100000
+          runAsUser: 1000100001
         terminationGracePeriodSeconds: 30
     test: false
     triggers:
