@@ -4,37 +4,14 @@ metadata:
   name: sonarqube
 objects:
 - apiVersion: v1
-  kind: ServiceAccount
+  kind: ImageStream
   metadata:
-    creationTimestamp: null
+    labels:
+      app: sonarqube
     name: sonarqube
-- apiVersion: v1
-  kind: SecurityContextConstraints
-  fsGroup:
-    type: RunAsAny
-  groups:
-  metadata:
-    annotations:
-      kubernetes.io/description: sonarqube-nonroot provides all features of the restricted SCC
-        but allows users to run with any non-root UID.  The user must specify the UID
-        or it must be specified on the by the manifest of the container runtime.
-    creationTimestamp: null
-    name: sonarqube-nonroot
-  priority: 1
-  users:
-  - system:serviceaccount:openshift:sonarqube
-  runAsUser:
-    type: MustRunAsNonRoot
-  seLinuxContext:
-    type: MustRunAs
-  supplementalGroups:
-    type: RunAsAny
-  volumes:
-  - configMap
-  - downwardAPI
-  - emptyDir
-  - persistentVolumeClaim
-  - secret
+  spec:
+    tags:
+    - name: "sonarqube"
 - apiVersion: "v1"
   kind: "BuildConfig"
   metadata:
@@ -48,22 +25,13 @@ objects:
       type: "Docker"
     output:
       to:
-        kind: "DockerImage"
-        name: "${OCP_REGISTRY_URL}:${SONARQUBE_BUILD_TAG}"
-      pushSecret:
-        name: "ocp-registry"
-- apiVersion: v1
-  kind: ImageStream
-  metadata:
-    labels:
-      app: sonarqube
-    name: sonarqube
-  spec:
-    tags:
-    - name: "${SONARQUBE_BUILD_TAG}"
-      from:
-        kind: DockerImage
-        name: "${OCP_REGISTRY_URL}"
+        kind: "ImageStreamTag"
+        name: "sonarqube:${SONARQUBE_BUILD_TAG}"
+    triggers:
+    - generic:
+        secret: b725254e6534fd70
+      type: Generic
+    - type: ConfigChange
 - kind: PersistentVolumeClaim
   apiVersion: v1
   metadata:
@@ -103,7 +71,7 @@ objects:
             value: "${POSTGRESQL_PASSWORD}"
           - name: POSTGRESQL_DATABASE
             value: "${POSTGRESQL_DATABASE}"
-          image: registry.access.redhat.com/rhscl/postgresql-95-rhel7@sha256:a0bfc4aa195737c802988f7c636073644d7a821061d801004277c98d776c9cbf
+          image: registry.access.redhat.com/rhscl/postgresql-94-rhel7@sha256:041485953fe0383ed58aad22a8eaa674358629009bbed6478fdd13567639bf57
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -136,19 +104,18 @@ objects:
             capabilities: {}
             privileged: false
           terminationMessagePath: /dev/termination-log
-          volumeMounts:
-          - mountPath: /var/lib/pgsql/data
-            name: postgresql-data
+#          volumeMounts:
+#          - mountPath: /var/lib/pgsql/data
+#            name: postgresql-data
         dnsPolicy: ClusterFirst
         restartPolicy: Always
-        securityContext: {}
-        serviceAccount: sonarqube
-        serviceAccountName: sonarqube
+        securityContext:
+          runAsUser: 1000100000
         terminationGracePeriodSeconds: 30
-        volumes:
-        - name: postgresql-data
-          persistentVolumeClaim:
-            claimName: "${DATABASE_SERVICE_NAME}"
+#        volumes:
+#        - name: postgresql-data
+#          persistentVolumeClaim:
+#            claimName: "${DATABASE_SERVICE_NAME}"
     test: false
     triggers:
     - imageChangeParams:
@@ -157,7 +124,7 @@ objects:
         - postgresql
         from:
           kind: ImageStreamTag
-          name: postgresql:9.5
+          name: "postgresql:${POSTGRESQL_VERSION}"
           namespace: openshift
       type: ImageChange
     - type: ConfigChange
@@ -184,7 +151,7 @@ objects:
     template:
       metadata:
         annotations:
-          openshift.io/container.sonarqube.image.entrypoint: '["./bin/run.sh"]'
+          openshift.io/container.sonarqube.image.entrypoint: run.sh
         creationTimestamp: null
         labels:
           app: sonarqube
@@ -234,9 +201,8 @@ objects:
         resources:
           limits:
             memory: "${SONAR_MEMORY_LIMIT}"
-        securityContext: {}
-        serviceAccount: sonarqube
-        serviceAccountName: sonarqube
+        securityContext:
+          runAsUser: 1000100000
         terminationGracePeriodSeconds: 30
     test: false
     triggers:
@@ -248,7 +214,6 @@ objects:
         from:
           kind: ImageStreamTag
           name: "sonarqube:${SONARQUBE_BUILD_TAG}"
-          namespace: openshift
       type: ImageChange
 - kind: Service
   apiVersion: v1
@@ -326,15 +291,10 @@ parameters:
 - name: POSTGRESQL_VERSION
   displayName: Version of PostgreSQL Image
   description: Version of PostgreSQL image to be used (9.2, 9.4, 9.5 or latest).
-  value: '9.5'
-  required: true
-- name: OCP_REGISTRY_URL
-  displayName: OCP Registry URL
-  description: OCP Registry URL, e.g. 172.30.93.229:5000/openshift/sonarqube
-  value: 172.30.xx.xxx:5000/openshift/sonarqube
+  value: '9.4'
   required: true
 - name: SONARQUBE_BUILD_TAG
   displayName: SonarQube Image Tag
-  description: SonarQube Image Tag (6.0-rhel7, latest, etc.)
-  value: 6.0-rhel7
+  description: SonarQube Image Tag (6.1-rhel7, latest, etc.)
+  value: 6.1-rhel7
   required: true
