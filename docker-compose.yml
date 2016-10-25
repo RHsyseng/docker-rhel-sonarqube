@@ -2,7 +2,7 @@ version: "2"
 
 services:
   sonarqube:
-    image: sonarqube:6.0-rhel7
+    image: sonarqube:6.1-rhel7
     container_name: sonarqube
     depends_on:
       - db
@@ -29,9 +29,9 @@ services:
       - POSTGRESQL_PASSWORD=sonar
       - POSTGRESQL_DATABASE=sonar
     volumes:
-      - /var/lib/pgsql:/var/lib/pgsql
-      # This needs explicit mapping due to https://github.com/docker-library/postgres/blob/4e48e3228a30763913ece952c611e5e9b95c8759/Dockerfile.template#L52
-      - /var/lib/pgsql/data:/var/lib/pgsql/data
+      - /var/lib/pgsql:/var/lib/pgsql:Z
+#      This needs explicit mapping due to https://github.com/docker-library/postgres/blob/4e48e3228a30763913ece952c611e5e9b95c8759/Dockerfile.template#L52
+      - /var/lib/pgsql/data:/var/lib/pgsql/data:Z
 
 networks:
   sonarnet:
