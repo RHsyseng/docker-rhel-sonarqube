@@ -10,7 +10,8 @@ $ oc process -f sonarqube-template.yaml | oc create -f -
 # IF deployment NOT triggered automatically
 $ oc deploy postgresql ; oc start-build sonarqube
 ```
-#####docker compose notes run from rhel7 machine with subscription & selinux enabled:
+#####docker compose notes
+#####- run from rhel7 machine with subscription & selinux enabled:
 ```shell
 $ docker build --pull -t sonarqube:6.1-rhel7 .
 $ sudo mkdir -p /var/lib/pgsql/data
