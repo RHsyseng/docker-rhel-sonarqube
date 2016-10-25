@@ -43,8 +43,8 @@ RUN yum clean all && \
 
 ENV APP_ROOT=/opt/${SONAR_USER} \
     USER_UID=1000160001
-ENV SONARQUBE_HOME=${APP_ROOT}/sonarqube \
-    PATH=$PATH:${SONARQUBE_HOME}/bin
+ENV SONARQUBE_HOME=${APP_ROOT}/sonarqube
+ENV PATH=$PATH:${SONARQUBE_HOME}/bin
 RUN mkdir -p ${APP_ROOT} && \
     useradd -l -u ${USER_UID} -r -g 0 -m -s /sbin/nologin \
             -c "${SONAR_USER} application user" ${SONAR_USER} && \
@@ -79,11 +79,11 @@ exec java -jar lib/sonar-application-$SONAR_VERSION.jar \
 -Dsonar.jdbc.password="$SONARQUBE_JDBC_PASSWORD" \
 -Dsonar.jdbc.url="$SONARQUBE_JDBC_URL" \
 -Dsonar.web.javaAdditionalOpts="$SONARQUBE_WEB_JVM_OPTS -Djava.security.egd=file:/dev/./urandom" \
-"$@"' > ${SONARQUBE_HOME}/bin/run.sh \
-    && chmod u+x ${SONARQUBE_HOME}/bin/run.sh
+"$@"' > ${SONARQUBE_HOME}/bin/run.sh && \
+    chmod u+x ${SONARQUBE_HOME}/bin/run.sh
 
 # Http port
 EXPOSE 9000
 VOLUME ["${SONARQUBE_HOME}/data", "${SONARQUBE_HOME}/extensions"]
 WORKDIR ${SONARQUBE_HOME}
-ENTRYPOINT ["./bin/run.sh"]
+ENTRYPOINT run.sh
