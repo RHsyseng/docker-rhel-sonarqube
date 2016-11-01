@@ -43,11 +43,11 @@ objects:
 - kind: DeploymentConfig
   apiVersion: v1
   metadata:
-    name: postgresql
+    name: sonarqube-postgresql
   spec:
     replicas: 1
     selector:
-      name: postgresql
+      name: sonarqube-postgresql
     strategy:
       recreateParams:
         timeoutSeconds: 900
@@ -57,10 +57,10 @@ objects:
       metadata:
         creationTimestamp: null
         labels:
-          name: postgresql
+          name: sonarqube-postgresql
       spec:
         containers:
-        - name: postgresql
+        - name: sonarqube-postgresql
           image: ' '
           imagePullPolicy: IfNotPresent
           env:
@@ -100,22 +100,22 @@ objects:
             capabilities: {}
             privileged: false
           terminationMessagePath: /dev/termination-log
-#          volumeMounts:
-#          - mountPath: /var/lib/pgsql/data
-#            name: postgresql-data
+          volumeMounts:
+          - mountPath: /var/lib/pgsql/data
+            name: postgresql-data
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         terminationGracePeriodSeconds: 30
-#        volumes:
-#        - name: postgresql-data
-#          persistentVolumeClaim:
-#            claimName: "${DATABASE_SERVICE_NAME}"
+        volumes:
+        - name: postgresql-data
+          persistentVolumeClaim:
+            claimName: "${DATABASE_SERVICE_NAME}"
     test: false
     triggers:
     - imageChangeParams:
         automatic: true
         containerNames:
-        - postgresql
+        - sonarqube-postgresql
         from:
           kind: ImageStreamTag
           name: "postgresql:${POSTGRESQL_VERSION}"
@@ -215,14 +215,14 @@ objects:
       targetPort: 5432
       nodePort: 0
     selector:
-      name: postgresql
+      name: sonarqube-postgresql
     type: ClusterIP
     sessionAffinity: None
 - kind: Service
   apiVersion: v1
   metadata:
     annotations:
-      service.alpha.openshift.io/dependencies: '[{"name":"postgresql","namespace":"","kind":"Service"}]'
+      service.alpha.openshift.io/dependencies: '[{"name":"sonarqube-postgresql","namespace":"","kind":"Service"}]'
     name: sonarqube
   spec:
     ports:
@@ -238,7 +238,7 @@ parameters:
 - name: DATABASE_SERVICE_NAME
   displayName: Database Service Name
   description: The name of the OpenShift Service exposed for the database.
-  value: postgresql
+  value: sonarqube-postgresql
   required: true
 - name: DATABASE_MEMORY_LIMIT
   displayName: Database Memory Limit
