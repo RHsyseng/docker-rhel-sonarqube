@@ -3,6 +3,14 @@ kind: Template
 metadata:
   name: sonarqube
 objects:
+- kind: Route
+  apiVersion: v1
+  metadata:
+    name: sonarqube
+  spec:
+    to:
+      kind: Service
+      name: sonarqube
 - kind: ImageStream
   apiVersion: v1
   metadata:
