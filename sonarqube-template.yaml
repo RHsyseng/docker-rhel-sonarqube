@@ -201,8 +201,7 @@ objects:
         resources:
           limits:
             memory: "${SONAR_MEMORY_LIMIT}"
-        securityContext:
-          runAsUser: 1000100001
+        securityContext: {}
         terminationGracePeriodSeconds: 30
     test: false
     triggers:
