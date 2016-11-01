@@ -3,27 +3,27 @@ kind: Template
 metadata:
   name: sonarqube
 objects:
-- apiVersion: v1
-  kind: ImageStream
+- kind: ImageStream
+  apiVersion: v1
   metadata:
     name: sonarqube
   spec:
     tags:
-    - name: "sonarqube"
-- apiVersion: "v1"
-  kind: "BuildConfig"
+    - name: sonarqube
+- kind: BuildConfig
+  apiVersion: v1
   metadata:
-    name: "sonarqube"
+    name: sonarqube
   spec:
     source:
-      type: "Git"
+      type: Git
       git:
         uri: git://github.com/RHsyseng/docker-rhel-sonarqube.git
     strategy:
-      type: "Docker"
+      type: Docker
     output:
       to:
-        kind: "ImageStreamTag"
+        kind: ImageStreamTag
         name: "sonarqube:${SONARQUBE_BUILD_TAG}"
     triggers:
     - generic:
@@ -40,8 +40,8 @@ objects:
     resources:
       requests:
         storage: "${DATABASE_VOLUME_CAPACITY}"
-- apiVersion: v1
-  kind: DeploymentConfig
+- kind: DeploymentConfig
+  apiVersion: v1
   metadata:
     name: postgresql
   spec:
@@ -60,15 +60,16 @@ objects:
           name: postgresql
       spec:
         containers:
-        - env:
+        - name: postgresql
+          image: ' '
+          imagePullPolicy: IfNotPresent
+          env:
           - name: POSTGRESQL_USER
             value: "${POSTGRESQL_USER}"
           - name: POSTGRESQL_PASSWORD
             value: "${POSTGRESQL_PASSWORD}"
           - name: POSTGRESQL_DATABASE
             value: "${POSTGRESQL_DATABASE}"
-          image: registry.access.redhat.com/rhscl/postgresql-94-rhel7@sha256:041485953fe0383ed58aad22a8eaa674358629009bbed6478fdd13567639bf57
-          imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
             initialDelaySeconds: 30
@@ -77,7 +78,6 @@ objects:
             tcpSocket:
               port: 5432
             timeoutSeconds: 1
-          name: postgresql
           ports:
           - containerPort: 5432
             protocol: TCP
@@ -105,8 +105,6 @@ objects:
 #            name: postgresql-data
         dnsPolicy: ClusterFirst
         restartPolicy: Always
-        securityContext:
-          runAsUser: 1000100002
         terminationGracePeriodSeconds: 30
 #        volumes:
 #        - name: postgresql-data
@@ -124,8 +122,8 @@ objects:
           namespace: openshift
       type: ImageChange
     - type: ConfigChange
-- apiVersion: v1
-  kind: DeploymentConfig
+- kind: DeploymentConfig
+  apiVersion: v1
   metadata:
     name: sonarqube
   spec:
@@ -150,15 +148,16 @@ objects:
           deploymentconfig: sonarqube
       spec:
         containers:
-        - env:
+        - name: sonarqube
+          image: "sonarqube:${SONARQUBE_BUILD_TAG}"
+          imagePullPolicy: IfNotPresent
+          env:
           - name: SONARQUBE_JDBC_PASSWORD
             value: "${POSTGRESQL_PASSWORD}"
           - name: SONARQUBE_JDBC_URL
             value: "jdbc:postgresql://${DATABASE_SERVICE_NAME}/${POSTGRESQL_DATABASE}"
           - name: SONARQUBE_JDBC_USERNAME
             value: "${POSTGRESQL_USER}"
-          image: "sonarqube:${SONARQUBE_BUILD_TAG}"
-          imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
             httpGet:
@@ -169,7 +168,6 @@ objects:
             periodSeconds: 10
             successThreshold: 1
             timeoutSeconds: 4
-          name: sonarqube
           ports:
           - containerPort: 9000
             protocol: TCP
@@ -193,8 +191,6 @@ objects:
         resources:
           limits:
             memory: "${SONAR_MEMORY_LIMIT}"
-        securityContext:
-          runAsUser: 1000100001
         terminationGracePeriodSeconds: 30
     test: false
     triggers:
@@ -222,8 +218,8 @@ objects:
       name: postgresql
     type: ClusterIP
     sessionAffinity: None
-- apiVersion: v1
-  kind: Service
+- kind: Service
+  apiVersion: v1
   metadata:
     annotations:
       service.alpha.openshift.io/dependencies: '[{"name":"postgresql","namespace":"","kind":"Service"}]'
@@ -278,7 +274,7 @@ parameters:
 - name: POSTGRESQL_VERSION
   displayName: Version of PostgreSQL Image
   description: Version of PostgreSQL image to be used (9.2, 9.4, 9.5 or latest).
-  value: '9.4'
+  value: '9.5'
   required: true
 - name: SONARQUBE_BUILD_TAG
   displayName: SonarQube Image Tag
