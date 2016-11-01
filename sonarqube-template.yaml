@@ -6,8 +6,6 @@ objects:
 - apiVersion: v1
   kind: ImageStream
   metadata:
-    labels:
-      app: sonarqube
     name: sonarqube
   spec:
     tags:
@@ -15,7 +13,7 @@ objects:
 - apiVersion: "v1"
   kind: "BuildConfig"
   metadata:
-    name: "sonarqube" 
+    name: "sonarqube"
   spec:
     source:
       type: "Git"
@@ -45,8 +43,6 @@ objects:
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
-    labels:
-      app: sonarqube
     name: postgresql
   spec:
     replicas: 1
@@ -131,13 +127,10 @@ objects:
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
-    labels:
-      app: sonarqube
     name: sonarqube
   spec:
     replicas: 1
     selector:
-      app: sonarqube
       deploymentconfig: sonarqube
     strategy:
       resources: {}
@@ -154,7 +147,6 @@ objects:
           openshift.io/container.sonarqube.image.entrypoint: run.sh
         creationTimestamp: null
         labels:
-          app: sonarqube
           deploymentconfig: sonarqube
       spec:
         containers:
@@ -219,8 +211,6 @@ objects:
   apiVersion: v1
   metadata:
     name: "${DATABASE_SERVICE_NAME}"
-    labels:
-      app: sonarqube
   spec:
     ports:
     - name: postgresql
@@ -238,8 +228,6 @@ objects:
     annotations:
       service.alpha.openshift.io/dependencies: '[{"name":"postgresql","namespace":"","kind":"Service"}]'
     name: sonarqube
-    labels:
-      app: sonarqube
   spec:
     ports:
     - name: 9000-tcp
@@ -247,7 +235,6 @@ objects:
       protocol: TCP
       targetPort: 9000
     selector:
-      app: sonarqube
       deploymentconfig: sonarqube
     sessionAffinity: None
     type: ClusterIP
