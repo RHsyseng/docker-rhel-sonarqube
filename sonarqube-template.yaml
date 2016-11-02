@@ -107,6 +107,7 @@ objects:
           securityContext:
             capabilities: {}
             privileged: false
+            supplementalGroups: [65534]
           terminationMessagePath: /dev/termination-log
           volumeMounts:
           - mountPath: /var/lib/pgsql/data
