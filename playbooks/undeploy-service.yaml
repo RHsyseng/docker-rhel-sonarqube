@@ -31,6 +31,7 @@
     command: oc delete {{ item.type }} {{ item.name }}
     with_items:
       - { type: imagestream, name: sonarqube }
+      - { type: buildconfig, name: sonarqube-postgresql }
       - { type: deploymentconfig, name: sonarqube }
       - { type: deploymentconfig, name: sonarqube-postgresql }
       - { type: pod, name: --all }
