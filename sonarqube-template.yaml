@@ -1,6 +1,13 @@
 apiVersion: v1
 kind: Template
+labels:
+  version: 6.1-1
+  group: infrastructure
 metadata:
+  annotations:
+    description: Creates the infrastructure for the end-to-end content and security management story.
+    tags: instant-app,sonarqube
+    version: "6.1"
   name: sonarqube
 objects:
 - kind: Route
@@ -17,27 +24,15 @@ objects:
     name: sonarqube
   spec:
     tags:
-    - name: sonarqube
-- kind: BuildConfig
-  apiVersion: v1
-  metadata:
-    name: sonarqube
-  spec:
-    source:
-      type: Git
-      git:
-        uri: git://github.com/RHsyseng/docker-rhel-sonarqube.git
-    strategy:
-      type: Docker
-    output:
-      to:
-        kind: ImageStreamTag
-        name: "sonarqube:${SONARQUBE_BUILD_TAG}"
-    triggers:
-    - generic:
-        secret: b725254e6534fd70
-      type: Generic
-    - type: ConfigChange
+      - name: "${SONARQUBE_BUILD_TAG}"
+        from:
+          kind: DockerImage
+          name: "${SONARQUBE_REPOSITORY_NAME}/${SONARQUBE_IMAGE_NAME}:${SONARQUBE_BUILD_TAG}"
+        importPolicy: {}
+      - name: latest
+        from:
+          kind: ImageStreamTag
+          name: "${SONARQUBE_BUILD_TAG}"
 - kind: PersistentVolumeClaim
   apiVersion: v1
   metadata:
@@ -285,6 +280,16 @@ parameters:
   displayName: Version of PostgreSQL Image
   description: Version of PostgreSQL image to be used (9.2, 9.4, 9.5 or latest).
   value: '9.5'
+  required: true
+- name: SONARQUBE_REPOSITORY_NAME
+  displayName: SonarQube Repository name
+  description: 'Name of the repository containing the SonarQube container image to be used'
+  value: 'goern-docker-registry.bintray.io/goern'
+  required: true
+- name: SONARQUBE_IMAGE_NAME
+  displayName: SonarQube container image name
+  description: 'Name of the SonarQube container image to be used'
+  value: 'sonarqube'
   required: true
 - name: SONARQUBE_BUILD_TAG
   displayName: SonarQube Image Tag
