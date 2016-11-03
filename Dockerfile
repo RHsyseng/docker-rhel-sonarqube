@@ -42,13 +42,13 @@ RUN yum clean all && \
     yum clean all
 
 ENV APP_ROOT=/opt/${SONAR_USER} \
-    USER_UID=1000100001
+    USER_UID=10001
 ENV SONARQUBE_HOME=${APP_ROOT}/sonarqube
 ENV PATH=$PATH:${SONARQUBE_HOME}/bin
 RUN mkdir -p ${APP_ROOT} && \
     useradd -l -u ${USER_UID} -r -g 0 -m -s /sbin/nologin \
             -c "${SONAR_USER} application user" ${SONAR_USER} && \
-    chown -R ${USER_UID}:0 ${APP_ROOT} && chmod 755 ${APP_ROOT}
+    chown -R ${USER_UID}:0 ${APP_ROOT}
 
 USER ${USER_UID}
 WORKDIR ${APP_ROOT}
@@ -66,7 +66,9 @@ RUN set -x \
     unzip sonarqube.zip && \
     mv sonarqube-${SONAR_VERSION} sonarqube && \
     rm sonarqube.zip* && \
-    rm -rf ${SONARQUBE_HOME}/bin/*
+    rm -rf ${SONARQUBE_HOME}/bin/* && \
+    chmod -R g+rw ${APP_ROOT} && \
+    find ${APP_ROOT} -type d -exec chmod g+x {} +
 
 RUN echo $'#!/bin/bash\n\
 set -e; \
@@ -80,7 +82,7 @@ exec java -jar lib/sonar-application-$SONAR_VERSION.jar \
 -Dsonar.jdbc.url="$SONARQUBE_JDBC_URL" \
 -Dsonar.web.javaAdditionalOpts="$SONARQUBE_WEB_JVM_OPTS -Djava.security.egd=file:/dev/./urandom" \
 "$@"' > ${SONARQUBE_HOME}/bin/run.sh && \
-    chmod u+x ${SONARQUBE_HOME}/bin/run.sh
+    chmod ug+x ${SONARQUBE_HOME}/bin/run.sh
 
 # Http port
 EXPOSE 9000
