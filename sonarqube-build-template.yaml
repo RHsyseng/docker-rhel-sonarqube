@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Template
+labels:
+  version: 6.1-1
+  group: infrastructure
+metadata:
+  annotations:
+    description: Creates a BuildConfig for SonarQube 6.1
+    tags: sonarqube
+    version: "6.1"
+  name: sonarqube-buildconfig
+parameters:
+- name: SONARQUBE_SOURCE_REPOSITORY
+  displayName: SonarQube source repository location
+  description: The name of the SonarQube source repository to build a SonarQube conatiner image.
+  value: git://github.com/RHsyseng/docker-rhel-sonarqube.git
+  required: true
+- name: SONARQUBE_OUTPUT_IMAGESTREAM
+  displayName: SonarQube ImageStream
+  description: The name of the ImageStream to put the SonarQube conatiner image to.
+  value: sonarqube:6.1-rhel7
+  required: true
+- name: GITHUB_TRIGGER_SECRET
+  displayName: Github webhook secret
+  description: The secret used by github webhook
+  value: b725254e6534fd70
+  required: true
+objects:
+- kind: BuildConfig
+  apiVersion: v1
+  metadata:
+    name: sonarqube
+  spec:
+    source:
+      type: Git
+      git:
+        uri: "${SONARQUBE_SOURCE_REPOSITORY}"
+    strategy:
+      type: Docker
+    output:
+      to:
+        kind: ImageStreamTag
+        name: "${SONARQUBE_OUTPUT_IMAGESTREAM}"
+    triggers:
+    - generic:
+        secret: "${GITHUB_TRIGGER_SECRET}"
+      type: Generic
+    - type: ConfigChange
