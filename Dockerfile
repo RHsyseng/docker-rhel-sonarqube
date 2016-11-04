@@ -47,12 +47,9 @@ ENV SONARQUBE_HOME=${APP_ROOT}/sonarqube
 ENV PATH=$PATH:${SONARQUBE_HOME}/bin
 RUN mkdir -p ${APP_ROOT} && \
     useradd -l -u ${USER_UID} -r -g 0 -m -s /sbin/nologin \
-            -c "${SONAR_USER} application user" ${SONAR_USER} && \
-    chown -R ${USER_UID}:0 ${APP_ROOT}
+            -c "${SONAR_USER} application user" ${SONAR_USER}
 
-USER ${USER_UID}
 WORKDIR ${APP_ROOT}
-
 RUN set -x \
     # pub   2048R/D26468DE 2015-05-25
     #       Key fingerprint = F118 2E81 C792 9289 21DB  CAB4 CFCA 4A29 D264 68DE
@@ -66,26 +63,18 @@ RUN set -x \
     unzip sonarqube.zip && \
     mv sonarqube-${SONAR_VERSION} sonarqube && \
     rm sonarqube.zip* && \
-    rm -rf ${SONARQUBE_HOME}/bin/* && \
-    chmod -R g+rw ${APP_ROOT} && \
-    find ${APP_ROOT} -type d -exec chmod g+x {} +
+    rm -rf ${SONARQUBE_HOME}/bin/*  
 
-RUN echo $'#!/bin/bash\n\
-set -e; \
-if [ "${1:0:1}" != '-' ]; then \
-  exec "$@"; \
-fi; \
-exec java -jar lib/sonar-application-$SONAR_VERSION.jar \
--Dsonar.log.console=true \
--Dsonar.jdbc.username="$SONARQUBE_JDBC_USERNAME" \
--Dsonar.jdbc.password="$SONARQUBE_JDBC_PASSWORD" \
--Dsonar.jdbc.url="$SONARQUBE_JDBC_URL" \
--Dsonar.web.javaAdditionalOpts="$SONARQUBE_WEB_JVM_OPTS -Djava.security.egd=file:/dev/./urandom" \
-"$@"' > ${SONARQUBE_HOME}/bin/run.sh && \
+COPY run.sh ${SONARQUBE_HOME}/bin/
+RUN chown -R ${USER_UID}:0 ${APP_ROOT} && \
+    chmod -R g+rw ${APP_ROOT} && \
+    find ${APP_ROOT} -type d -exec chmod g+x {} + && \
     chmod ug+x ${SONARQUBE_HOME}/bin/run.sh
+
+USER ${USER_UID}
+WORKDIR ${SONARQUBE_HOME}
 
 # Http port
 EXPOSE 9000
 VOLUME ["${SONARQUBE_HOME}/data", "${SONARQUBE_HOME}/extensions"]
-WORKDIR ${SONARQUBE_HOME}
 ENTRYPOINT run.sh
