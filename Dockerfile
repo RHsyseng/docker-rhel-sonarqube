@@ -18,11 +18,10 @@ LABEL Name="sonarqube" \
       summary="SonarQube" \
       description="SonarQube" \
       RUN='docker run -di \
-            --name ${NAME}_run \
+            --name ${NAME} \
             -p 9000:9000 \
             $IMAGE' \
-      STOP='docker stop ${NAME}_run && echo "Container ${NAME}_run has been stopped"' \
-      UNINSTALL='docker rm ${NAME}_run && echo "Uninstallation complete"'
+      STOP='docker stop ${NAME}'
 
 LABEL io.k8s.description="SonarQube" \
       io.k8s.display-name="SonarQube" \
