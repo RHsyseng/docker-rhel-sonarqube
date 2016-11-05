@@ -11,7 +11,7 @@
     openshift_master_url: "{{ lookup('env','OCP_URL') }}"
     username: "{{ lookup('env','OCP_USER') }}"
     password: "{{ lookup('env','OCP_PASSWORD') }}"
-    project_name: sonar-test
+    project_name: acme-dev-infra
 
   tasks:
   - name: verify oc version
@@ -34,7 +34,6 @@
       - { type: buildconfig, name: sonarqube-postgresql }
       - { type: deploymentconfig, name: sonarqube }
       - { type: deploymentconfig, name: sonarqube-postgresql }
-      - { type: pod, name: --all }
       - { type: service, name: sonarqube }
       - { type: service, name: sonarqube-postgresql }
       - { type: route, name: sonarqube }
