@@ -106,12 +106,12 @@ objects:
           terminationMessagePath: /dev/termination-log
           volumeMounts:
           - mountPath: /var/lib/pgsql/data
-            name: postgresql-data
+            name: sonarqube-postgresql-data
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         terminationGracePeriodSeconds: 30
         volumes:
-        - name: postgresql-data
+        - name: sonarqube-postgresql-data
           persistentVolumeClaim:
             claimName: "${DATABASE_SERVICE_NAME}"
     test: false
