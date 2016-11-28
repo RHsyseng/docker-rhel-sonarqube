@@ -1,5 +1,5 @@
-# docker build --pull -t sonarqube:6.1-rhel7 .
-FROM registry.access.redhat.com/rhel7
+FROM centos:7 
+
 MAINTAINER Red Hat Systems Engineering <refarch-feedback@redhat.com>
 
 ENV SONAR_VERSION=6.1 \
@@ -32,12 +32,7 @@ LABEL io.k8s.description="SonarQube" \
 
 COPY help.md /
 RUN yum clean all && \
-    yum-config-manager --disable \* && \
-    yum-config-manager --enable rhel-7-server-rpms && \
-    yum-config-manager --enable rhel-7-server-optional-rpms && \
     yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical --setopt=tsflags=nodocs && \
-    yum -y install golang-github-cpuguy83-go-md2man && go-md2man -in help.md -out help.1 && \
-    yum -y remove golang-github-cpuguy83-go-md2man && rm -f help.md && \
     yum -y install --setopt=tsflags=nodocs unzip java-1.8.0-openjdk && \
     yum clean all
 
