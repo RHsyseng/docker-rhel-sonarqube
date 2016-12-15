@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Template
 labels:
-  version: 6.1-1
+  version: 6.1-2
   group: infrastructure
 metadata:
   annotations:
@@ -43,6 +43,16 @@ objects:
     resources:
       requests:
         storage: "${DATABASE_VOLUME_CAPACITY}"
+- kind: PersistentVolumeClaim
+  apiVersion: v1
+  metadata:
+    name: sonarqube-extensions
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: 512Mi
 - kind: DeploymentConfig
   apiVersion: v1
   metadata:
@@ -190,6 +200,9 @@ objects:
               cpu: 750m
               memory: 1024Mi
           terminationMessagePath: /dev/termination-log
+          volumeMounts:
+          - mountPath: /opt/sonarqube/extensions
+            name: sonarqube-extensions
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         resources:
@@ -197,6 +210,10 @@ objects:
             memory: "${SONAR_MEMORY_LIMIT}"
         securityContext: {}
         terminationGracePeriodSeconds: 30
+        volumes:
+        - name: sonarqube-extensions
+          persistentVolumeClaim:
+            claimName: sonarqube-extensions
     test: false
     triggers:
     - type: ConfigChange
