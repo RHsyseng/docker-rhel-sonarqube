@@ -1,8 +1,8 @@
-# docker build --pull -t sonarqube:6.1-rhel7 -t sonarqube .
+# docker build --pull -t sonarqube:6.2-rhel7 -t sonarqube .
 FROM registry.access.redhat.com/rhel7
 MAINTAINER Red Hat Systems Engineering <refarch-feedback@redhat.com>
 
-ENV SONAR_VERSION=6.1 \
+ENV SONAR_VERSION=6.2 \
     SONAR_USER=sonarsrc \
     LANG=en_US.utf8 \
     JAVA_HOME=/usr/lib/jvm/jre \
@@ -12,32 +12,27 @@ ENV SONAR_VERSION=6.1 \
     SONARQUBE_JDBC_PASSWORD=sonar \
     SONARQUBE_JDBC_URL=
 
-LABEL Name="sonarqube" \
-      Vendor="SonarSource" \
-      Version="6.1-rhel7" \
+LABEL name="sonarqube" \
+      vendor="SonarSource" \
+      version="6.2-rhel7" \
       summary="SonarQube" \
       description="SonarQube" \
-      RUN='docker run -di \
+      run='docker run -di \
             --name ${NAME} \
             -p 9000:9000 \
             $IMAGE' \
-      STOP='docker stop ${NAME}'
-
-LABEL io.k8s.description="SonarQube" \
+      io.k8s.description="SonarQube" \
       io.k8s.display-name="SonarQube" \
       io.openshift.build.commit.author="Red Hat Systems Engineering <refarch-feedback@redhat.com>" \
       io.openshift.expose-services="9000:9000" \
-      io.openshift.tags="SonarQube,sonarqube,sonar"
+      io.openshift.tags="sonarqube,sonar,sonarsource"
 
-COPY help.md /
-RUN yum clean all && \
-    yum-config-manager --disable \* && \
-    yum-config-manager --enable rhel-7-server-rpms && \
-    yum-config-manager --enable rhel-7-server-optional-rpms && \
+COPY help.md /tmp/
+RUN yum clean all && yum-config-manager --disable \* &> /dev/null && \
+    yum-config-manager --enable rhel-7-server-rpms,rhel-7-server-optional-rpms &> /dev/null && \
     yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical --setopt=tsflags=nodocs && \
-    yum -y install golang-github-cpuguy83-go-md2man && go-md2man -in help.md -out help.1 && \
-    yum -y remove golang-github-cpuguy83-go-md2man && rm -f help.md && \
-    yum -y install --setopt=tsflags=nodocs unzip java-1.8.0-openjdk && \
+    yum -y install --setopt=tsflags=nodocs golang-github-cpuguy83-go-md2man java-1.8.0-openjdk unzip && \
+    go-md2man -in /tmp/help.md -out /help.1 && yum -y remove golang-github-cpuguy83-go-md2man && \
     yum clean all
 
 ENV APP_ROOT=/opt/${SONAR_USER} \
@@ -56,8 +51,10 @@ RUN set -x \
     # sub   2048R/06855C1D 2015-05-25
     gpg --gen-key && \
     gpg --keyserver ha.pool.sks-keyservers.net --recv-keys F1182E81C792928921DBCAB4CFCA4A29D26468DE && \
-    curl -o sonarqube.zip -SL https://sonarsource.bintray.com/Distribution/sonarqube/sonarqube-${SONAR_VERSION}.zip --retry 999 --retry-max-time 0 -C - && \
-    curl -o sonarqube.zip.asc -SL https://sonarsource.bintray.com/Distribution/sonarqube/sonarqube-${SONAR_VERSION}.zip.asc --retry 999 --retry-max-time 0 -C - && \
+    curl -o sonarqube.zip -SL https://sonarsource.bintray.com/Distribution/sonarqube/sonarqube-${SONAR_VERSION}.zip \
+                --retry 9 --retry-max-time 0 -C - && \
+    curl -o sonarqube.zip.asc -SL https://sonarsource.bintray.com/Distribution/sonarqube/sonarqube-${SONAR_VERSION}.zip.asc \
+                --retry 9 --retry-max-time 0 -C - && \
     gpg --batch --verify sonarqube.zip.asc sonarqube.zip && \
     unzip sonarqube.zip && \
     mv sonarqube-${SONAR_VERSION} sonarqube && \

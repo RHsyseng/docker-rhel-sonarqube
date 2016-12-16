@@ -294,6 +294,6 @@ parameters:
   required: true
 - name: SONARQUBE_BUILD_TAG
   displayName: SonarQube Image Tag
-  description: SonarQube Image Tag (6.1-rhel7, latest, etc.)
-  value: 6.1-rhel7
+  description: SonarQube Image Tag (6.2-rhel7, latest, etc.)
+  value: 6.2-rhel7
   required: true
