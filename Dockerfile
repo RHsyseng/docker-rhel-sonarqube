@@ -14,7 +14,7 @@ ENV SONAR_VERSION=6.2 \
 
 LABEL name="sonarqube" \
       vendor="SonarSource" \
-      version="6.2-rhel7" \
+      version="${SONAR_VERSION}-rhel7" \
       summary="SonarQube" \
       description="SonarQube" \
       run='docker run -di \
