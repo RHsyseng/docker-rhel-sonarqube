@@ -1,0 +1,46 @@
+---
+- name: Deploy SonarQube, see https://github.com/goern/sonarqube-on-openshift
+  tags:
+    - openshift
+    - sonarqube
+    - sonar
+    - deploy
+
+  hosts: localhost
+  vars: # FIXME DRY
+    openshift_master_url: "{{ lookup('env','OCP_URL') }}"
+    username: "{{ lookup('env','OCP_USER') }}"
+    password: "{{ lookup('env','OCP_PASSWORD') }}"
+    project_name: acme-dev-infra
+
+  tasks:
+  - name: verify oc version
+    shell: "oc version"
+    register: command_result
+    failed_when:
+      - "'oc v1.3.1' not in command_result.stdout"
+      - "'oc v3.3' not in command_result.stdout"
+
+  - name: login to OpenShift as administrator
+    command: "oc login --insecure-skip-tls-verify=true -u {{ username }} -p {{ password }} {{ openshift_master_url }}"
+
+  - name: make sure to use the right project
+    command: "oc project {{ project_name }}"
+    register: project_rc
+    ignore_errors: true
+
+  - name: create project as it did not exist before
+    command: "oc new-project {{ project_name }}"
+    when: project_rc|failed
+
+  - name: create template for sonarqube
+    command: oc create -f ../sonarqube-template.yaml
+    register: sonarqube_template_rc
+    ignore_errors: true
+
+  - name: replace existing template for sonarqube
+    command: oc replace -f ../sonarqube-template.yaml
+    when: sonarqube_template_rc|failed
+
+  - name: "create SonarQube application"
+    command: "oc new-app --template=sonarqube"

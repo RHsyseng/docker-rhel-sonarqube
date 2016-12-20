@@ -1,37 +1,38 @@
 apiVersion: v1
 kind: Template
+labels:
+  version: 6.1-2
+  group: infrastructure
 metadata:
+  annotations:
+    description: Creates the infrastructure for the end-to-end content and security management story.
+    tags: instant-app,sonarqube
+    version: "6.1"
   name: sonarqube
 objects:
-- apiVersion: v1
-  kind: ImageStream
+- kind: Route
+  apiVersion: v1
   metadata:
-    labels:
-      app: sonarqube
+    name: sonarqube
+  spec:
+    to:
+      kind: Service
+      name: sonarqube
+- kind: ImageStream
+  apiVersion: v1
+  metadata:
     name: sonarqube
   spec:
     tags:
-    - name: "sonarqube"
-- apiVersion: "v1"
-  kind: "BuildConfig"
-  metadata:
-    name: "sonarqube" 
-  spec:
-    source:
-      type: "Git"
-      git:
-        uri: git://github.com/RHsyseng/docker-rhel-sonarqube.git
-    strategy:
-      type: "Docker"
-    output:
-      to:
-        kind: "ImageStreamTag"
-        name: "sonarqube:${SONARQUBE_BUILD_TAG}"
-    triggers:
-    - generic:
-        secret: b725254e6534fd70
-      type: Generic
-    - type: ConfigChange
+      - name: "${SONARQUBE_BUILD_TAG}"
+        from:
+          kind: DockerImage
+          name: "${SONARQUBE_REPOSITORY_NAME}/${SONARQUBE_IMAGE_NAME}:${SONARQUBE_BUILD_TAG}"
+        importPolicy: {}
+      - name: latest
+        from:
+          kind: ImageStreamTag
+          name: "${SONARQUBE_BUILD_TAG}"
 - kind: PersistentVolumeClaim
   apiVersion: v1
   metadata:
@@ -42,16 +43,24 @@ objects:
     resources:
       requests:
         storage: "${DATABASE_VOLUME_CAPACITY}"
-- apiVersion: v1
-  kind: DeploymentConfig
+- kind: PersistentVolumeClaim
+  apiVersion: v1
   metadata:
-    labels:
-      app: sonarqube
-    name: postgresql
+    name: sonarqube-extensions
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: 512Mi
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    name: sonarqube-postgresql
   spec:
     replicas: 1
     selector:
-      name: postgresql
+      name: sonarqube-postgresql
     strategy:
       recreateParams:
         timeoutSeconds: 900
@@ -61,18 +70,19 @@ objects:
       metadata:
         creationTimestamp: null
         labels:
-          name: postgresql
+          name: sonarqube-postgresql
       spec:
         containers:
-        - env:
+        - name: sonarqube-postgresql
+          image: ' '
+          imagePullPolicy: IfNotPresent
+          env:
           - name: POSTGRESQL_USER
             value: "${POSTGRESQL_USER}"
           - name: POSTGRESQL_PASSWORD
             value: "${POSTGRESQL_PASSWORD}"
           - name: POSTGRESQL_DATABASE
             value: "${POSTGRESQL_DATABASE}"
-          image: registry.access.redhat.com/rhscl/postgresql-94-rhel7@sha256:041485953fe0383ed58aad22a8eaa674358629009bbed6478fdd13567639bf57
-          imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
             initialDelaySeconds: 30
@@ -81,7 +91,6 @@ objects:
             tcpSocket:
               port: 5432
             timeoutSeconds: 1
-          name: postgresql
           ports:
           - containerPort: 5432
             protocol: TCP
@@ -103,41 +112,37 @@ objects:
           securityContext:
             capabilities: {}
             privileged: false
+            supplementalGroups: [65534]
           terminationMessagePath: /dev/termination-log
-#          volumeMounts:
-#          - mountPath: /var/lib/pgsql/data
-#            name: postgresql-data
+          volumeMounts:
+          - mountPath: /var/lib/pgsql/data
+            name: sonarqube-postgresql-data
         dnsPolicy: ClusterFirst
         restartPolicy: Always
-        securityContext:
-          runAsUser: 1000100002
         terminationGracePeriodSeconds: 30
-#        volumes:
-#        - name: postgresql-data
-#          persistentVolumeClaim:
-#            claimName: "${DATABASE_SERVICE_NAME}"
+        volumes:
+        - name: sonarqube-postgresql-data
+          persistentVolumeClaim:
+            claimName: "${DATABASE_SERVICE_NAME}"
     test: false
     triggers:
     - imageChangeParams:
         automatic: true
         containerNames:
-        - postgresql
+        - sonarqube-postgresql
         from:
           kind: ImageStreamTag
           name: "postgresql:${POSTGRESQL_VERSION}"
           namespace: openshift
       type: ImageChange
     - type: ConfigChange
-- apiVersion: v1
-  kind: DeploymentConfig
+- kind: DeploymentConfig
+  apiVersion: v1
   metadata:
-    labels:
-      app: sonarqube
     name: sonarqube
   spec:
     replicas: 1
     selector:
-      app: sonarqube
       deploymentconfig: sonarqube
     strategy:
       resources: {}
@@ -154,19 +159,19 @@ objects:
           openshift.io/container.sonarqube.image.entrypoint: run.sh
         creationTimestamp: null
         labels:
-          app: sonarqube
           deploymentconfig: sonarqube
       spec:
         containers:
-        - env:
+        - name: sonarqube
+          image: "sonarqube:${SONARQUBE_BUILD_TAG}"
+          imagePullPolicy: IfNotPresent
+          env:
           - name: SONARQUBE_JDBC_PASSWORD
             value: "${POSTGRESQL_PASSWORD}"
           - name: SONARQUBE_JDBC_URL
             value: "jdbc:postgresql://${DATABASE_SERVICE_NAME}/${POSTGRESQL_DATABASE}"
           - name: SONARQUBE_JDBC_USERNAME
             value: "${POSTGRESQL_USER}"
-          image: "sonarqube:${SONARQUBE_BUILD_TAG}"
-          imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
             httpGet:
@@ -177,7 +182,6 @@ objects:
             periodSeconds: 10
             successThreshold: 1
             timeoutSeconds: 4
-          name: sonarqube
           ports:
           - containerPort: 9000
             protocol: TCP
@@ -196,6 +200,9 @@ objects:
               cpu: 750m
               memory: 1024Mi
           terminationMessagePath: /dev/termination-log
+          volumeMounts:
+          - mountPath: /opt/sonarqube/extensions
+            name: sonarqube-extensions
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         resources:
@@ -203,6 +210,10 @@ objects:
             memory: "${SONAR_MEMORY_LIMIT}"
         securityContext: {}
         terminationGracePeriodSeconds: 30
+        volumes:
+        - name: sonarqube-extensions
+          persistentVolumeClaim:
+            claimName: sonarqube-extensions
     test: false
     triggers:
     - type: ConfigChange
@@ -218,8 +229,6 @@ objects:
   apiVersion: v1
   metadata:
     name: "${DATABASE_SERVICE_NAME}"
-    labels:
-      app: sonarqube
   spec:
     ports:
     - name: postgresql
@@ -228,17 +237,15 @@ objects:
       targetPort: 5432
       nodePort: 0
     selector:
-      name: postgresql
+      name: sonarqube-postgresql
     type: ClusterIP
     sessionAffinity: None
-- apiVersion: v1
-  kind: Service
+- kind: Service
+  apiVersion: v1
   metadata:
     annotations:
-      service.alpha.openshift.io/dependencies: '[{"name":"postgresql","namespace":"","kind":"Service"}]'
+      service.alpha.openshift.io/dependencies: '[{"name":"sonarqube-postgresql","namespace":"","kind":"Service"}]'
     name: sonarqube
-    labels:
-      app: sonarqube
   spec:
     ports:
     - name: 9000-tcp
@@ -246,7 +253,6 @@ objects:
       protocol: TCP
       targetPort: 9000
     selector:
-      app: sonarqube
       deploymentconfig: sonarqube
     sessionAffinity: None
     type: ClusterIP
@@ -254,7 +260,7 @@ parameters:
 - name: DATABASE_SERVICE_NAME
   displayName: Database Service Name
   description: The name of the OpenShift Service exposed for the database.
-  value: postgresql
+  value: sonarqube-postgresql
   required: true
 - name: DATABASE_MEMORY_LIMIT
   displayName: Database Memory Limit
@@ -290,7 +296,17 @@ parameters:
 - name: POSTGRESQL_VERSION
   displayName: Version of PostgreSQL Image
   description: Version of PostgreSQL image to be used (9.2, 9.4, 9.5 or latest).
-  value: '9.4'
+  value: '9.5'
+  required: true
+- name: SONARQUBE_REPOSITORY_NAME
+  displayName: SonarQube Repository name
+  description: 'Name of the repository containing the SonarQube container image to be used'
+  value: 'goern-docker-registry.bintray.io/goern'
+  required: true
+- name: SONARQUBE_IMAGE_NAME
+  displayName: SonarQube container image name
+  description: 'Name of the SonarQube container image to be used'
+  value: 'sonarqube'
   required: true
 - name: SONARQUBE_BUILD_TAG
   displayName: SonarQube Image Tag

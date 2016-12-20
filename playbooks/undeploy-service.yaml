@@ -1,0 +1,42 @@
+---
+- name: Undeploy SonarQube
+  tags:
+    - openshift
+    - sonarqube
+    - sonar
+    - undeploy
+
+  hosts: localhost
+  vars: # FIXME DRY
+    openshift_master_url: "{{ lookup('env','OCP_URL') }}"
+    username: "{{ lookup('env','OCP_USER') }}"
+    password: "{{ lookup('env','OCP_PASSWORD') }}"
+    project_name: acme-dev-infra
+
+  tasks:
+  - name: verify oc version
+    shell: "oc version"
+    register: command_result
+    failed_when:
+      - "'oc v1.3.1' not in command_result.stdout"
+      - "'oc v3.3' not in command_result.stdout"
+
+  - name: login to OpenShift as administrator
+    command: "oc login --insecure-skip-tls-verify=true -u {{ username }} -p {{ password }} {{ openshift_master_url }}"
+
+  - name: make sure to use the right project
+    command: "oc project {{ project_name }}"
+
+  - name: delete all sonarqube components
+    command: oc delete {{ item.type }} {{ item.name }}
+    with_items:
+      - { type: imagestream, name: sonarqube }
+      - { type: buildconfig, name: sonarqube-postgresql }
+      - { type: deploymentconfig, name: sonarqube }
+      - { type: deploymentconfig, name: sonarqube-postgresql }
+      - { type: service, name: sonarqube }
+      - { type: service, name: sonarqube-postgresql }
+      - { type: route, name: sonarqube }
+      - { type: template, name: sonarqube }
+      - { type: pvc, name: sonarqube-postgresql }
+    ignore_errors: true
