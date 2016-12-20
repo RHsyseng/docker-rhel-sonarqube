@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Template
 labels:
-  version: 6.1-1
+  version: 6.2-1
   group: infrastructure
 metadata:
   annotations:
-    description: Creates a BuildConfig for SonarQube 6.1
+    description: Creates a BuildConfig for SonarQube 6.2
     tags: sonarqube
-    version: "6.1"
+    version: "6.2"
   name: sonarqube-buildconfig
 parameters:
 - name: SONARQUBE_SOURCE_REPOSITORY
@@ -18,7 +18,7 @@ parameters:
 - name: SONARQUBE_OUTPUT_IMAGESTREAM
   displayName: SonarQube ImageStream
   description: The name of the ImageStream to put the SonarQube conatiner image to.
-  value: sonarqube:6.1-rhel7
+  value: sonarqube:6.2-rhel7
   required: true
 - name: GITHUB_TRIGGER_SECRET
   displayName: Github webhook secret
