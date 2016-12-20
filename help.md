@@ -1,108 +1,40 @@
-% STARTER (1) Container Image Pages
-% Tommy Hughes
-% October 13, 2016
-
-# NAME
-starter \- starter container image
+% IMAGE_NAME(1)
+% MAINTAINER
+% DATE
 
 # DESCRIPTION
-The starter image provides an example of how a RHEL-based image build could start.
-
-The starter image is designed to be run by the atomic command with one of these options:
-
-`run`
-
-Starts the installed container with selected privileges to the host.
-
-`stop`
-
-Stops the installed container
-
-`uninstall`
-
-Removes the installed container, not the image
-
-The container itself consists of:
-    - RHEL7 base image
-    - Apache/2.4 w/ SSL
-    - Atomic help file
-
-Files added to the container during docker build include: /help.1.
+Describe in greater detail the role or purpose of the image.  This can include more specifics about the
+packages that make up the image.  You can also describe whether image is meant to be interactive
+or more service oriented.
 
 # USAGE
-To use the starter container, you can run the atomic command with run, stop, or uninstall options:
+Describe how to run the image as a container and what factors might influence the behaviour of the image
+itself. For example:
 
-To run the starter container:
+To set up the host system for use by the XYZ container, run:
 
-  atomic run acme/starter
+  atomic install XYZimage
 
-To stop the starter container (after it is installed), run:
+To run the XYZ container (after it is installed), run:
 
-  atomic stop acme/starter
+  atomic run XYZimage
 
-To remove the starter container (not the image) from your system, run:
+To remove the XYZ container (not the image) from your system, run:
 
-  atomic uninstall acme/starter
+  atomic uninstall XYZimage
+
+To upgrade the XYZ container from your system, run:
+
+  atomic upgrade XYZimage
 
 # LABELS
-The starter container includes the following LABEL settings:
-
-That atomic command runs the docker command set in this label:
-
-`RUN=`
-
-  LABEL RUN='docker run -tdi --name ${NAME} \
-        -p 8080:8080 \
-        -p 8443:8443 \
-        $IMAGE' \
-
-  The contents of the RUN label tells an `atomic run acme/starter` command to open ports 8080/8443 & set the name of the container.
-
-`Name=`
-
-The registry location and name of the image. For example, Name="acme/starter".
-
-`Version=`
-
-The Red Hat Enterprise Linux version from which the container was built. For example, Version="7.2".
-
-`Release=`
-
-The specific release number of the container. For example, Release="12.1.a":
-
-When the atomic command runs the starter container, it reads the command line associated with the selected option
-from a LABEL set within the Docker container itself. It then runs that command. The following sections detail
-each option and associated LABEL:
+Describe LABEL settings (from the Dockerfile that created the image) that contains pertinent information.
+For containers run by atomic, that could include INSTALL, RUN, UNINSTALL, and UPDATE LABELS. Others could
+include BZComponent, Name, Version, Release, and Architecture.
 
 # SECURITY IMPLICATIONS
-`THESE IMPLICATIONS DO NOT APPLY TO THIS IMAGE - this is only an example of what documentation might look like:`
-
-Below is an example of what is referred to as a super-privileged container. It is designed to have almost complete
-access to the host system as root user. The following docker command options open selected privileges to the host:
-
-`-d`
-
-Runs continuously as a daemon process in the background
-
-`--privileged`
-
-Turns off security separation, so a process running as root in the container would have the same access to the
-host as it would if it were run directly on the host.
-
-`--net=host`
-
-Allows processes run inside the container to directly access host network interfaces
-
-`--pid=host`
-
-Allows processes run inside the container to see and work with all processes in the host process table
-
-`--restart=always`
-
-If the container should fail or otherwise stop, it would be restarted
+If you expose ports or run with privileges, it would be warranted to briefly note those and provide
+an explanation if needed.
 
 # HISTORY
 Similar to a Changelog of sorts which can be as detailed as the maintainer wishes.
-
-# AUTHORS
-Tommy Hughes

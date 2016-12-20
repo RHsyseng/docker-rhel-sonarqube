@@ -2,7 +2,7 @@ version: "2"
 
 services:
   sonarqube:
-    image: sonarqube:6.1-rhel7
+    image: sonarqube:6.2-rhel7
     container_name: sonarqube
     depends_on:
       - db
