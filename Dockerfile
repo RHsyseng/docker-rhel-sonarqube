@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 # docker build --pull -t sonarqube:6.2-rhel7 -t sonarqube .
 FROM registry.access.redhat.com/rhel7
+=======
+FROM centos:7 
+
+>>>>>>> df42ef55c62a27720cb91617bd7ee25782d70728
 MAINTAINER Red Hat Systems Engineering <refarch-feedback@redhat.com>
 
 ENV SONAR_VERSION=6.2 \
@@ -28,12 +33,19 @@ LABEL name="sonarqube" \
       io.openshift.expose-services="9000:9000" \
       io.openshift.tags="sonarqube,sonar,sonarsource"
 
+<<<<<<< HEAD
 COPY help.md /tmp/
 RUN yum clean all && yum-config-manager --disable \* &> /dev/null && \
     yum-config-manager --enable rhel-7-server-rpms,rhel-7-server-optional-rpms &> /dev/null && \
     yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical --setopt=tsflags=nodocs && \
     yum -y install --setopt=tsflags=nodocs golang-github-cpuguy83-go-md2man java-1.8.0-openjdk unzip && \
     go-md2man -in /tmp/help.md -out /help.1 && yum -y remove golang-github-cpuguy83-go-md2man && \
+=======
+COPY help.md /
+RUN yum clean all && \
+    yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical --setopt=tsflags=nodocs && \
+    yum -y install --setopt=tsflags=nodocs unzip java-1.8.0-openjdk && \
+>>>>>>> df42ef55c62a27720cb91617bd7ee25782d70728
     yum clean all
 
 ENV APP_ROOT=/opt/${SONAR_USER} \
@@ -74,4 +86,9 @@ WORKDIR ${SONARQUBE_HOME}
 # Http port
 EXPOSE 9000
 VOLUME ["${SONARQUBE_HOME}/data", "${SONARQUBE_HOME}/extensions"]
+<<<<<<< HEAD
 ENTRYPOINT run.sh
+=======
+WORKDIR ${SONARQUBE_HOME}
+ENTRYPOINT run.sh
+>>>>>>> df42ef55c62a27720cb91617bd7ee25782d70728
