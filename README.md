@@ -1,11 +1,11 @@
 ## OpenShift deployment examples:
 
-Standalone:
+### Standalone:
 ```shell
 $ oc new-app tchughesiv/sonarqube-centos
 $ oc expose svc/sonarqube-centos
 ```
-With database:
+### With PostgreSQL:
 ```shell
 $ oc new-app postgresql-ephemeral --param-file=params
 $ oc new-app tchughesiv/sonarqube-centos -e SONARQUBE_JDBC_URL="jdbc:postgresql://sonar-postgresql/sonar"
