@@ -1,5 +1,5 @@
-# docker build --pull -t sonarqube:6.7.1-rhel7 -t sonarqube .
-FROM registry.access.redhat.com/rhel7
+# docker build --pull -t sonarqube:6.7.1-centos7 -t sonarqube .
+FROM centos:centos7
 
 ENV SONAR_VERSION=6.7.1 \
     SONARQUBE_HOME=/opt/sonarqube \
@@ -16,7 +16,7 @@ EXPOSE 9000
 
 LABEL name="sonarqube" \
       vendor="SonarSource" \
-      version="${SONAR_VERSION}-rhel7" \
+      version="${SONAR_VERSION}-centos7" \
       run='docker run -di \
             --name ${NAME} \
             -p 9000:9000 \
@@ -27,9 +27,7 @@ LABEL name="sonarqube" \
       io.openshift.expose-services="9000:9000" \
       io.openshift.tags="sonarqube,sonar,sonarsource"
 
-RUN yum -y update-minimal --disablerepo "*" --enablerepo rhel-7-server-rpms --setopt=tsflags=nodocs \
-      --security --sec-severity=Important --sec-severity=Critical && \
-    yum -y install --disablerepo "*" --enablerepo rhel-7-server-rpms,rhel-7-server-optional-rpms --setopt=tsflags=nodocs java-1.8.0-openjdk unzip hostname && \
+RUN yum -y install --setopt=tsflags=nodocs java-1.8.0-openjdk unzip hostname && \
     yum clean all
 
 RUN set -x \

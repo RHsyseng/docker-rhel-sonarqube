@@ -1,33 +1,20 @@
-####OpenShift notes
-If using a persistent volume with postgres, ownership of that volume should be is set accordingly & necessary lines uncommented from template... for example:
+## OpenShift deployment examples:
+
+Standalone:
 ```shell
-$ chown -R 1000100002:0 /var/export/postgres_pv
+$ oc new-app tchughesiv/sonarqube-centos
+$ oc expose svc/sonarqube-centos
 ```
-Deploy from template:
+With database:
 ```shell
-$ oc process -f sonarqube-template.yaml | oc create -f -
-
-# IF deployment NOT triggered automatically
-$ oc deploy postgresql ; oc start-build sonarqube
+$ oc new-app postgresql-ephemeral --param-file=params
+$ oc new-app tchughesiv/sonarqube-centos -e SONARQUBE_JDBC_URL="jdbc:postgresql://sonar-postgresql/sonar"
+$ oc expose svc/sonarqube-centos
 ```
-####docker compose notes
-run from rhel7 machine with subscription & selinux enabled:
+
+## RHEL7 build in OpenShift
 ```shell
-$ docker build --pull -t sonarqube:6.2-rhel7 .
-$ sudo mkdir -p /var/lib/pgsql/data
-$ sudo chown -R 26:26 /var/lib/pgsql && sudo setfacl -Rm u:26:rwx /var/lib/pgsql
-$ docker-compose up
+$ oc new-build --name=sonarqube https://github.com/RHsyseng/docker-rhel-sonarqube
+$ oc new-app sonarqube -e SONARQUBE_JDBC_URL="jdbc:postgresql://sonar-postgresql/sonar"
+$ oc expose svc/sonarqube
 ```
-
-## Deploy/Undeploy to OpenShift
-
-We do provide Ansible playbooks to deploy and undeploy SonarQube to OpenShift Container Platfrom.
-To use these playbooks, set the following environment variables:
-
-```
-$ export OCP_USER=user
-$ export OCP_PASSWORD=password
-$ export OCP_URL=https://master.acme.example.com
-```
-
-Now you can use the two playbooks provided in `playbooks/`.
