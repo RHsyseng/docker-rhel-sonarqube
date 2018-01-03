@@ -1,4 +1,4 @@
-# docker build --pull -t sonarqube:6.7.1-centos7 -t sonarqube .
+# docker build --pull -t sonarqube:6.7.1-centos7 -t sonarqube -f Dockerfile.centos7 .
 FROM centos:centos7
 
 ENV SONAR_VERSION=6.7.1 \
