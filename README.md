@@ -2,14 +2,14 @@
 
 ### Standalone:
 ```shell
-$ oc new-app tchughesiv/sonarqube-centos
-$ oc expose svc/sonarqube-centos
+$ oc new-app registry.centos.org/rhsyseng/sonarqube
+$ oc expose svc/sonarqube
 ```
 ### With PostgreSQL:
 ```shell
 $ oc new-app postgresql-ephemeral --param-file=params
-$ oc new-app tchughesiv/sonarqube-centos -e SONARQUBE_JDBC_URL="jdbc:postgresql://sonar-postgresql/sonar"
-$ oc expose svc/sonarqube-centos
+$ oc new-app registry.centos.org/rhsyseng/sonarqube -e SONARQUBE_JDBC_URL="jdbc:postgresql://sonar-postgresql/sonar"
+$ oc expose svc/sonarqube
 ```
 
 ## RHEL7 build in OpenShift
